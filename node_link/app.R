@@ -2,24 +2,16 @@ library(shiny)
 library(leaflet)
 library(rgdal)
 library(chorddiag)
+library(igraph)
+library(here)
+source("load_data.R")
 
-setwd(dirname(rstudioapi::getSourceEditorContext()$path))
-
-taxi_data <- read.csv("../../yellow_tripdata_2019-01.csv")
-taxi_zones <- read.csv("../data/taxi+_zone_lookup.csv")
-
-zone_borough <- unclass(factor(taxi_zones$Borough))
-boroughs <- attr(x = zone_borough, which = "levels")
-mtrx <- matrix(0, nrow = length(boroughs), ncol = length(boroughs))
-dimnames(mtrx) <- list(have = boroughs, prefer = boroughs)
-
-# TODO: Modify matrix calculation to something more efficient
-for (i in 1:nrows(taxi_data)) {
-  origin <- taxi_data[i, "PULocationID"]
-  destination <- taxi_data[i, "DOLocationID"]
-  mtrx[zone_borough[origin], zone_borough[destination]] <-
-    mtrx[zone_borough[origin], zone_borough[destination]] + 1
-}
+data <- initial.data()
+mtrx_zones <- get.matrix(
+  data$df, "PULocationID", "DOLocationID",
+  data$zones$LocationID
+)
+mtrx_boroughs <- get.matrix(data$df, "boroughOr", "boroughDst", data$boroughs)
 
 ui <- fluidPage(
   leafletOutput("map", height = 880, width = 880),
@@ -28,7 +20,7 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   shapeData <- spTransform(
-    readOGR("../data", "taxi_zones"),
+    readOGR(here("data", "taxi_zones")),
     CRS("+proj=longlat +datum=WGS84 +no_defs")
   )
 
@@ -47,8 +39,26 @@ server <- function(input, output, session) {
   })
 
   output$chord <- renderChorddiag({
-    chorddiag(mtrx, groupnameFontsize = 10, showTicks = F, groupnamePadding = 10)
+    chorddiag(mtrx_boroughs,
+      groupnameFontsize = 10, showTicks = F,
+      groupnamePadding = 10
+    )
   })
 }
 
 shinyApp(ui, server)
+
+# Keep only those edges that represent at least a 0.5 per thousand trips
+# mtrx_zones[mtrx_zones < 0.0005 * nrow(data$df)] <- 0
+# mtrx_zones.gr <- graph_from_adjacency_matrix(mtrx_zones,
+#   mode = "directed",
+#   weighted = TRUE
+# )
+# mtrx_zones.visn <- toVisNetworkData(mtrx_zones.gr)
+# mtrx_zones.visn$edges$value <- mtrx_zones.visn$edges$weight
+# mtrx_zones.visn$nodes$label <-
+# 
+# visNetwork(mtrx_zones.visn$nodes, mtrx_zones.visn$edges) %>%
+#   visIgraphLayout()
+# l <- layout_with_drl(mtrx_zones.gr, options=list(simmer.attraction=0))
+# plot(mtrx_zones.gr, layout=l, vertex.size=3, vertex.label=NA)
