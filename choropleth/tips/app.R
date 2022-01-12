@@ -28,7 +28,7 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   
   # Read data
-  taxis <- read.csv("../../yellow_tripdata_2019-01.csv",header=TRUE)
+  taxis <- read.csv("../../data/yellow_tripdata_2019-01.csv",header=TRUE)
   
   
   # Select only those who payed by credit card
