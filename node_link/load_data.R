@@ -1,5 +1,4 @@
 library(here)
-library(visNetwork)
 
 # Load data
 initial.data <- function() {

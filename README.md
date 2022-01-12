@@ -8,11 +8,17 @@ This repository compiles some visualization solutions proposed for the [TLC Trip
 
 ## Dependencies
 The project has been developed using the following sotware:
+<!--- Check how dependencies are usually specified in R apps --->
 - [R](https://www.r-project.org/) version 4.1.2 with the following packages:
   - [shiny](https://shiny.rstudio.com/) (>= 1.7.1).
   - [leaflet](https://rstudio.github.io/leaflet/) (>= 2.0.4.1).
   - [chorddiag](https://github.com/mattflor/chorddiag) (>= 0.1.3).
   - [rgdal](https://cran.r-project.org/web/packages/rgdal/index.html) (>= 1.5-28).
+  - gdata.
+  - here.
+  - igraph.
+  - dplyr.
+  - leaflet.extras.
 
 
 ## Usage
