@@ -23,22 +23,28 @@ get.boroughs.matrix <- function(df, zones) {
 
 # Returns a data frame where odd rows represent origins and even rows, destinations
 get.trips <- function(df, coord) {
-  agg_df <- aggregate(amount ~ PULocationID + DOLocationID, df, sum) %>%
+  hours <- 0:23
+  
+  df$tpep_pickup_datetime <- as.numeric(
+    format(as.POSIXct(df$tpep_pickup_datetime, format = "%Y-%m-%d %H:%M:%S"),
+           "%H"))
+  
+  df$Orlng <- coord[df$PULocationID, 1]
+  df$Orlat <- coord[df$PULocationID, 2]
+  df$Dstlng <- coord[df$DOLocationID, 1]
+  df$Dstlat <- coord[df$DOLocationID, 2]
+  
+  dfs <- df %>% 
     subset(PULocationID != 265 & DOLocationID != 265 & 
-             PULocationID != 264 & DOLocationID != 264)
-  agg_df$Orlng <- coord[agg_df$PULocationID, 1]
-  agg_df$Orlat <- coord[agg_df$PULocationID, 2]
-  agg_df$Dstlng <- coord[agg_df$DOLocationID, 1]
-  agg_df$Dstlat <- coord[agg_df$DOLocationID, 2]
+                         PULocationID != 264 & DOLocationID != 264) %>% 
+    split(~tpep_pickup_datetime)
+  
+  
+  agg_dfs <- lapply(dfs, function(i) {
+    aggregate(amount ~ Orlng + Orlat + Dstlng + Dstlat, i, sum)
+  })
 
-  # Old way
-  # origins <- agg_df[, c("Orlng", "Orlat", "amount")] %>%
-  #   rename(lng = Orlng, lat = Orlat)
-  # 
-  # destinations <- agg_df[, c("Dstlng", "Dstlat", "amount")] %>%
-  #   rename(lng = Dstlng, lat = Dstlat)
-  # return(interleave(origins, destinations))
-  return(agg_df)
+  return(agg_dfs)
 }
 
 # Returns all data the Shiny app needs
@@ -56,14 +62,11 @@ get.data <- function() {
       CRS("+proj=longlat +datum=WGS84 +no_defs")
     )
 
-    # shape = readOGR(here("..", "data", "taxi_zones.shp"))
     coord <- as.data.frame(coordinates(shape), row.names = 1:nrow(shape))
     
     shapeData <- geojson_json(shape)
     
     coord$zone <- taxi_zones$Zone[1:263]
-    # coord$length <- sqrt(shape$Shape_Area/pi)
-    coord$length <- rep(1, nrow(shape))
     
     trips <- get.trips(taxi_data, coord)
     save(mtrx_boroughs, shapeData, trips, coord = coord, file = "data.RData")
