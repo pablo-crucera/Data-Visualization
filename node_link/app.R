@@ -8,13 +8,21 @@ source("load_data.R")
 key <- "pk.eyJ1IjoiamF2aWVnYWwiLCJhIjoiY2t5ZDU0NGo1MDEyMTMwcXBqOWxuaWQ1aSJ9.R8Jpo0pPpa8Ow46YQry_Wg"
 set_token(key)
 
+# Get week days
 styles <- c("dark", "light", "outdoors", "streets", "satellite", "satellite-streets")
+lc_time <- Sys.getlocale("LC_TIME")
+Sys.setlocale("LC_TIME", "en_US.UTF-8") # Needed to get week days in English
+week_days <- weekdays(seq(Sys.Date(), Sys.Date() + 6, by = "days"))
+Sys.setlocale("LC_TIME", lc_time)
+
+hours <- sprintf("%02d", 0:23)
+names(hours) <- sprintf("%02d:00", 0:23)
 
 ui <- dashboardPage(
   skin = "black",
   dashboardHeader(title = "TLC Taxi Trip Data"),
   dashboardSidebar(
-    selectInput("select", h3("Map style"),
+    selectInput("styles", h3("Map style"),
       choices = styles,
       selected = "streets"
     ),
@@ -30,8 +38,11 @@ ui <- dashboardPage(
       label = "Width:",
       min = 0, max = 100, value = 50, ticks = FALSE
     ),
+    selectInput("day", h3("Week day"),
+      choices = week_days, selected = "Monday"
+    ),
     selectInput("hour", h3("Hour"),
-      choices = 0:23, selected = 17
+      choices = hours, selected = 17
     )
   ),
   dashboardBody(
@@ -67,8 +78,8 @@ server <- function(input, output, session) {
       mapdeck_update(map_id = "map") %>% mapdeck_view(
         location = c(-73.983504, 40.697824),
         zoom = 10,
-        pitch = input$slider,
-        bearing = input$slider2,
+        pitch = input$pitch,
+        bearing = input$bearing,
         duration = 2000,
         transition = "fly"
       )
@@ -77,11 +88,11 @@ server <- function(input, output, session) {
 
   observeEvent(
     {
-      input$select
+      input$styles
     },
     {
       mapdeck_update(map_id = "map") %>%
-        update_style(style = mapdeck_style(input$select))
+        update_style(style = mapdeck_style(input$styles))
     }
   )
 
@@ -89,17 +100,19 @@ server <- function(input, output, session) {
     {
       input$width
       input$hour
+      input$day
     },
     {
-      trips <- data$trips[[input$hour]][,]
-      max_amount <- 4608 # Maximum value found 
-      trips$opacity <- input$width * trips$amount / max_amount
+      # TODO: Move width calculation to load_data.R
+      trips <- data$trips[[paste(input$hour, input$day, sep = ".")]][, ]
+      max_factor <- 1000
+      trips$width <- input$width * trips$amount / max_factor
       mapdeck_update(map_id = "map") %>%
         add_animated_arc(
           data = trips,
           origin = c("Orlng", "Orlat"),
           destination = c("Dstlng", "Dstlat"),
-          stroke_width = "opacity",
+          stroke_width = "width",
           trail_length = 0.05,
           animation_speed = 0.01,
           palette = "magenta2green",
@@ -110,13 +123,23 @@ server <- function(input, output, session) {
     }
   )
 
-  # TODO: Add hour modification
-  output$chord <- renderChorddiag({
-    chorddiag(data$mtrx_boroughs,
-      groupnameFontsize = 10, showTicks = F,
-      groupnamePadding = 10
-    )
-  })
+  observeEvent(
+    {
+      input$hour
+      input$day
+    },
+    {
+      output$chord <- renderChorddiag({
+        chorddiag(data$mtrcs_boroughs[[paste(input$hour,
+          input$day,
+          sep = "."
+        )]][, ],
+        groupnameFontsize = 10, showTicks = F,
+        groupnamePadding = 10
+        )
+      })
+    }
+  )
 }
 
 shinyApp(ui, server)
