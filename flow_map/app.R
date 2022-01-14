@@ -16,7 +16,7 @@ week_days <- weekdays(seq(Sys.Date(), Sys.Date() + 6, by = "days"))
 Sys.setlocale("LC_TIME", lc_time)
 
 hours <- sprintf("%02d", 0:23)
-names(hours) <- sprintf("%02d:00", 0:23)
+names(hours) <- sprintf("%02d:00-%02d:59", 0:23, 0:23)
 
 ui <- dashboardPage(
   skin = "black",
@@ -46,8 +46,14 @@ ui <- dashboardPage(
     )
   ),
   dashboardBody(
-    mapdeckOutput("map", height = 700),
-    chorddiagOutput("chord")
+    fluidRow(
+      column(8, box(title = "Flow map", 
+                    mapdeckOutput("map", height = 700),
+                    width = "100%")),
+      column(4, box(title = "Chord diagram", 
+                    chorddiagOutput("chord", height = 700), 
+                    width = "100%"))
+    )
   )
 )
 

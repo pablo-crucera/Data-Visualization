@@ -39,8 +39,8 @@ attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base
 
 other attached packages:
- [1] geojsonio_0.9.4      gdata_2.18.0         dplyr_1.0.7          rgdal_1.5-28         sp_1.4-5             here_1.0.1
- [7] mapdeck_0.3.4        chorddiag_0.1.3      shinydashboard_0.7.2 shiny_1.7.1
+ [1] dttr2_0.4.0          geojsonio_0.9.4      gdata_2.18.0         dplyr_1.0.7          rgdal_1.5-28         sp_1.4-5
+ [7] here_1.0.1           mapdeck_0.3.4        chorddiag_0.1.3      shinydashboard_0.7.2 shiny_1.7.1
 
 loaded via a namespace (and not attached):
  [1] Rcpp_1.0.8         lattice_0.20-45    class_7.3-19       gtools_3.9.2       assertthat_0.2.1   rprojroot_2.0.2
@@ -51,9 +51,9 @@ loaded via a namespace (and not attached):
 [31] httpcode_0.3.0     fansi_0.5.0        crayon_1.4.2       withr_2.4.3        later_1.3.0        sf_1.0-5
 [37] crul_1.2.0         grid_4.1.2         jsonify_1.2.1      jsonlite_1.7.2     xtable_1.8-4       lifecycle_1.0.1
 [43] DBI_1.1.1          magrittr_2.0.1     units_0.7-2        KernSmooth_2.23-20 cachem_1.0.6       promises_1.2.0.1
-[49] bslib_0.3.1        ellipsis_0.3.2     generics_0.1.1     vctrs_0.3.8        geojsonsf_2.0.1    tools_4.1.2
-[55] glue_1.6.0         purrr_0.3.4        rsconnect_0.8.25   yaml_2.2.1         fastmap_1.1.0      maptools_1.1-2
-[61] classInt_0.4-3     sass_0.4.0
+[49] bslib_0.3.1        ellipsis_0.3.2     chk_0.7.0          generics_0.1.1     vctrs_0.3.8        RColorBrewer_1.1-2
+[55] geojsonsf_2.0.1    tools_4.1.2        glue_1.6.0         purrr_0.3.4        hms_1.1.1          rsconnect_0.8.25
+[61] yaml_2.2.1         fastmap_1.1.0      maptools_1.1-2     classInt_0.4-3     sass_0.4.0
 ```
 --->
 
