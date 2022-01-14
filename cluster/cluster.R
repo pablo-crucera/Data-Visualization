@@ -11,7 +11,14 @@ library(RColorBrewer)
 library(GGally)
 library(rlang)
 library(data.table)
+library(here)
+library(rgdal)
+library(gdata)
 
+taxi <- read.csv(here("/home/julia/Escritorio/Visualization Practical Work/data/yellow_tripdata_2019-01.csv"),  header = TRUE)
+taxi <- sample_n(taxi, 1000)
+taxi <- subset(taxi, select = -congestion_surcharge)
+save(taxi, file = "nsample.RData")
 
 ##cite
 ## https://uc-r.github.io/kmeans_clustering
@@ -21,7 +28,7 @@ library(data.table)
 ########################## Clustering algorithm ################################
 ################################################################################
 
-taxi <- read.csv(file = 'yellow_tripdata_2019-01.csv', header = TRUE)
+taxi <- read.csv(here("/home/julia/Escritorio/Visualization Practical Work/data/yellow_tripdata_2019-01.csv"),  header = TRUE)
 # head(taxi)
 # dim(taxi)
 taxi <- sample_n(taxi, 1000)
@@ -31,7 +38,170 @@ sapply(taxi, function(x)
   sum(is.na(x)))
 # We drop the las column because of the many NA
 taxi <- subset(taxi, select = -congestion_surcharge)
-# anyNA(taxi)
+anyNA(taxi)
+
+################################Preprocessing###############################################
+taxi <- read.csv(here("/home/julia/Escritorio/Visualization Practical Work/data/yellow_tripdata_2019-01.csv"),  header = TRUE)
+taxi <- sample_n(taxi, 1000)
+taxi <- subset(taxi, select = -congestion_surcharge)
+
+## pickup
+taxi <- 
+  taxi %>%
+  mutate(tpep_pickup_datetime=lapply(tpep_pickup_datetime, as.character))
+
+
+# converting to datetime object
+taxi[["tpep_pickup_datetime"]] <- strptime(taxi[["tpep_pickup_datetime"]],
+                                            format = "%Y-%m-%d %H:%M:%S")
+taxi <- 
+  taxi %>%
+  mutate(tpep_pickup_datetime=lapply(tpep_pickup_datetime, as.numeric))
+
+
+## dropoff 
+taxi <- 
+  taxi %>%
+  mutate(tpep_dropoff_datetime=lapply(tpep_dropoff_datetime, as.character))
+
+
+# converting to datetime object
+taxi[["tpep_dropoff_datetime"]] <- strptime(taxi[["tpep_dropoff_datetime"]],
+                                 format = "%Y-%m-%d %H:%M:%S")
+taxi <- 
+  taxi %>%
+  mutate(tpep_dropoff_datetime=lapply(tpep_dropoff_datetime, as.numeric))
+
+
+# Convert categorical to nominal
+
+taxi$store_and_fwd_flag <- sapply(taxi$store_and_fwd_flag, unclass)
+
+
+taxi <-
+  transform(
+    taxi,
+    tpep_pickup_datetime = as.numeric(tpep_pickup_datetime),
+    tpep_dropoff_datetime = as.numeric(tpep_dropoff_datetime),
+    RatecodeID = as.numeric(RatecodeID),
+    store_and_fwd_flag = as.numeric(store_and_fwd_flag),
+    PULocationID = as.numeric(PULocationID),
+    DOLocationID = as.numeric(DOLocationID),
+    payment_type = as.numeric(payment_type)
+  )
+
+
+taxi <-
+  subset(
+    taxi,
+    select = -c(
+      improvement_surcharge
+    )
+  )
+
+
+taxi <- scale(taxi)
+
+
+
+############preprocessing 2####################################################
+load("nsample.RData")
+
+taxi <-
+  taxi %>% separate(tpep_dropoff_datetime,
+                    c("date_dropoff", "time_dropoff"),
+                    " ")
+
+taxi <-
+  taxi %>% separate(tpep_pickup_datetime,
+                    c("date_pickup", "time_pickup"),
+                    " ")
+
+############ pickup
+taxi <- 
+  taxi %>%
+  mutate(date_pickup=lapply(date_pickup, as.character))
+
+
+# converting to datetime object
+taxi[["date_pickup"]] <- strptime(taxi[["date_pickup"]],
+                                           format = "%Y-%m-%d")
+taxi <- 
+  taxi %>%
+  mutate(date_pickup=lapply(date_pickup, as.numeric))
+
+taxi <- 
+  taxi %>%
+  mutate(time_pickup=lapply(time_pickup, as.character))
+
+
+# converting to datetime object
+taxi[["time_pickup"]] <- strptime(taxi[["time_pickup"]],
+                                           format = "%H:%M:%S")
+taxi <- 
+  taxi %>%
+  mutate(time_pickup=lapply(time_pickup, as.numeric))
+
+
+
+##### dropoff 
+taxi <- 
+  taxi %>%
+  mutate(date_dropoff=lapply(date_dropoff, as.character))
+
+
+# converting to datetime object
+taxi[["date_dropoff"]] <- strptime(taxi[["date_dropoff"]],
+                                  format = "%Y-%m-%d")
+taxi <- 
+  taxi %>%
+  mutate(date_dropoff=lapply(date_dropoff, as.numeric))
+
+taxi <- 
+  taxi %>%
+  mutate(time_dropoff=lapply(time_dropoff, as.character))
+
+
+# converting to datetime object
+taxi[["time_dropoff"]] <- strptime(taxi[["time_dropoff"]],
+                                  format = "%H:%M:%S")
+taxi <- 
+  taxi %>%
+  mutate(time_dropoff=lapply(time_dropoff, as.numeric))
+
+# Convert categorical to nominal
+
+taxi$store_and_fwd_flag <- sapply(taxi$store_and_fwd_flag, unclass)
+
+
+taxi <-
+  transform(
+    taxi,
+    time_dropoff = as.numeric(time_dropoff),
+    date_dropoff = as.numeric(date_dropoff),
+    time_pickup = as.numeric(time_pickup ),
+    date_pickup  = as.numeric(date_pickup ),
+    RatecodeID = as.numeric(RatecodeID),
+    store_and_fwd_flag = as.numeric(store_and_fwd_flag),
+    PULocationID = as.numeric(PULocationID),
+    DOLocationID = as.numeric(DOLocationID),
+    payment_type = as.numeric(payment_type)
+  )
+
+
+taxi <-
+  subset(
+    taxi,
+    select = -c(
+      improvement_surcharge
+    )
+  )
+
+
+taxi <- scale(taxi)
+
+
+
 
 ############################Data preprocessing #################################
 # For tpep_pickup_datetime and tpep_dropoff_datetime we will make columns for
@@ -105,6 +275,8 @@ taxi <-
       improvement_surcharge
     )
   )
+
+
 taxi <- scale(taxi)
 
 
@@ -137,6 +309,10 @@ str(taxi)
 #
 #
 # ################################# Clustering #################################
+source("load_cluster_data.R")
+taxi<- get.data()
+
+load("data_cluster3.RData")
 
 kmeans.re <- kmeans(taxi, centers = 3, nstart = 20)
 fviz_cluster(kmeans.re, data = taxi)
@@ -181,15 +357,13 @@ kmeans.re <- kmeans(taxi, centers = 2, nstart = 20)
 
 taxi <- as.data.table(taxi)
 taxi[, cluster := as.factor(kmeans.re$cluster)]
-col = colnames(taxi)
-col <- col[c(17, 12, 20, 21, 22, 11)]
+#col = colnames(taxi)
+col <- c("date_pickup", "time_pickup" , "fare_amount", "total_amount", "trip_distance" , "tip_amount" ,"extra")
 #
-# [1] "VendorID"              "day_pickup"            "hour_pickup"           "min_pickup"
-# [5] "sec_pickup"            "day_dropoff"           "hour_dropoff"          "min_dropoff"
-# [9] "sec_dropoff"           "passenger_count"       "trip_distance"         "RatecodeID"
-# [13] "store_and_fwd_flag"    "PULocationID"          "DOLocationID"          "payment_type"
-# [17] "fare_amount"           "extra"                 "mta_tax"               "tip_amount"
-# [21] "tolls_amount"          "improvement_surcharge" "total_amount"          "cluster"
+# [1] "VendorID"           "date_pickup"        "time_pickup"        "date_dropoff"       "time_dropoff"      
+# [6] "passenger_count"    "trip_distance"      "RatecodeID"         "store_and_fwd_flag" "PULocationID"      
+# [11] "DOLocationID"       "payment_type"       "fare_amount"        "extra"              "mta_tax"           
+# [16] "tip_amount"         "tolls_amount"       "total_amount"       "cluster"
 #
 ggpairs(taxi, aes(colour = cluster, alpha = 0.4), columns = col)
 
