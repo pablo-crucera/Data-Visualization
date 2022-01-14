@@ -9,7 +9,9 @@ key <- "pk.eyJ1IjoiamF2aWVnYWwiLCJhIjoiY2t5ZDU0NGo1MDEyMTMwcXBqOWxuaWQ1aSJ9.R8Jp
 set_token(key)
 
 # Get week days
-styles <- c("dark", "light", "outdoors", "streets", "satellite", "satellite-streets")
+styles <- c(
+  "dark", "light", "outdoors", "streets", "satellite", "satellite-streets"
+)
 lc_time <- Sys.getlocale("LC_TIME")
 Sys.setlocale("LC_TIME", "en_US.UTF-8") # Needed to get week days in English
 week_days <- weekdays(seq(Sys.Date(), Sys.Date() + 6, by = "days"))
@@ -21,38 +23,43 @@ names(hours) <- sprintf("%02d:00-%02d:59", 0:23, 0:23)
 ui <- dashboardPage(
   skin = "black",
   dashboardHeader(title = "TLC Taxi Trip Data"),
-  dashboardSidebar(
-    selectInput("styles", h3("Map style"),
-      choices = styles,
-      selected = "streets"
-    ),
-    sliderInput("pitch",
-      label = "Pitch:",
-      min = 0, max = 60, value = 0, ticks = FALSE
-    ),
-    sliderInput("bearing",
-      label = "Bearing:",
-      min = -180, max = 180, value = 150, ticks = FALSE
-    ),
-    sliderInput("width",
-      label = "Width:",
-      min = 0, max = 100, value = 50, ticks = FALSE
-    ),
-    selectInput("day", h3("Week day"),
-      choices = week_days, selected = "Monday"
-    ),
-    selectInput("hour", h3("Hour"),
-      choices = hours, selected = 17
-    )
-  ),
+  dashboardSidebar(),
   dashboardBody(
     fluidRow(
-      column(8, box(title = "Flow map", 
-                    mapdeckOutput("map", height = 700),
-                    width = "100%")),
-      column(4, box(title = "Chord diagram", 
-                    chorddiagOutput("chord", height = 700), 
-                    width = "100%"))
+      column(8, box(
+        title = "Flow map",
+        width = "100%",
+        mapdeckOutput("map", height = 700))),
+      column(4, box(
+        title = "Chord diagram",
+        chorddiagOutput("chord", height = 700),
+        width = "100%"
+      )),
+      column(4, box(
+        title = "Map options",
+        width = "100%", selectInput("styles", h3("Map style"),
+          choices = styles,
+          selected = "streets"
+        ),
+        sliderInput("pitch",
+          label = "Pitch:",
+          min = 0, max = 60, value = 0, ticks = FALSE
+        ),
+        sliderInput("bearing",
+          label = "Bearing:",
+          min = -180, max = 180, value = 150, ticks = FALSE
+        ),
+        sliderInput("width",
+          label = "Width:",
+          min = 0, max = 100, value = 50, ticks = FALSE
+        ),
+        selectInput("day", h3("Week day"),
+          choices = week_days, selected = "Monday"
+        ),
+        selectInput("hour", h3("Hour"),
+          choices = hours, selected = 17
+        )
+      ))
     )
   )
 )
