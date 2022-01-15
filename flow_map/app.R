@@ -26,40 +26,58 @@ ui <- dashboardPage(
   dashboardSidebar(),
   dashboardBody(
     fluidRow(
-      column(8, box(
-        title = "Flow map",
-        width = "100%",
-        mapdeckOutput("map", height = 700))),
-      column(4, box(
-        title = "Chord diagram",
-        chorddiagOutput("chord", height = 700),
-        width = "100%"
-      )),
-      column(4, box(
-        title = "Map options",
-        width = "100%", selectInput("styles", h3("Map style"),
-          choices = styles,
-          selected = "streets"
-        ),
-        sliderInput("pitch",
-          label = "Pitch:",
-          min = 0, max = 60, value = 0, ticks = FALSE
-        ),
-        sliderInput("bearing",
-          label = "Bearing:",
-          min = -180, max = 180, value = 150, ticks = FALSE
-        ),
-        sliderInput("width",
-          label = "Width:",
-          min = 0, max = 100, value = 50, ticks = FALSE
-        ),
-        selectInput("day", h3("Week day"),
-          choices = week_days, selected = "Monday"
-        ),
-        selectInput("hour", h3("Hour"),
-          choices = hours, selected = 17
+      column(
+        2, box(
+          title = "Time and week day", status = "primary", height = 700,
+          solidHeader = TRUE, width = NULL,
+          selectInput("day", h3("Week day"),
+            choices = week_days, selected = "Monday"
+          ),
+          selectInput("hour", h3("Time"),
+            choices = hours, selected = 17
+          )
         )
-      ))
+      ),
+      column(
+        6, box(
+          title = "Flow map", status = "primary",
+          solidHeader = TRUE, height = 700, width = NULL,
+          mapdeckOutput("map", height = 500),
+          box(fluidRow(
+            column(2, selectInput("styles", h3("Map style"),
+              choices = styles,
+              selected = "streets"
+            )),
+            column(2, sliderInput("pitch",
+              label = "Pitch:",
+              min = 0, max = 60, value = 0, ticks = FALSE
+            )),
+            column(2, sliderInput("bearing",
+              label = "Bearing:",
+              min = -180, max = 180, value = 150, ticks = FALSE
+            )),
+            column(2, sliderInput("width",
+              label = "Width:",
+              min = 0, max = 100, value = 50, ticks = FALSE
+            )),
+            column(2, sliderInput("length",
+              label = "Length:",
+              min = 0, max = 500, value = 50, ticks = FALSE
+            )),
+            column(2, sliderInput("speed",
+              label = "Speed:",
+              min = 0, max = 500, value = 50, ticks = FALSE
+            ))
+          ), width = NULL, status = "primary")
+        )
+      ),
+      column(
+        4, box(
+          title = "Chord diagram", status = "primary", solidHeader = TRUE,
+          chorddiagOutput("chord", height = 650),
+          width = NULL, height = 700
+        )
+      )
     )
   )
 )
@@ -69,7 +87,6 @@ server <- function(input, output, session) {
 
   output$map <- renderMapdeck(mapdeck(
     location = c(-73.983504, 40.697824),
-    zoom = 10,
     pitch = 0,
     bearing = 150
   ) %>%
@@ -80,6 +97,12 @@ server <- function(input, output, session) {
       palette = "inferno",
       auto_highlight = TRUE,
       layer_id = "shapes"
+    ) %>%
+    mapdeck_view( # Needed for initial view in browser
+      location = c(-73.983504, 40.697824),
+      zoom = 10,
+      pitch = 0,
+      bearing = 150,
     ))
 
   observeEvent(
@@ -90,7 +113,6 @@ server <- function(input, output, session) {
     {
       mapdeck_update(map_id = "map") %>% mapdeck_view(
         location = c(-73.983504, 40.697824),
-        zoom = 10,
         pitch = input$pitch,
         bearing = input$bearing,
         duration = 2000,
@@ -114,6 +136,8 @@ server <- function(input, output, session) {
       input$width
       input$hour
       input$day
+      input$length
+      input$speed
     },
     {
       # TODO: Move width calculation to load_data.R
@@ -126,9 +150,8 @@ server <- function(input, output, session) {
           origin = c("Orlng", "Orlat"),
           destination = c("Dstlng", "Dstlat"),
           stroke_width = "width",
-          trail_length = 0.05,
-          animation_speed = 0.01,
-          palette = "magenta2green",
+          trail_length = input$length * 0.001,
+          animation_speed = input$speed * 0.0004,
           brush_radius = 500,
           layer_id = "arcs",
           update_view = FALSE,
