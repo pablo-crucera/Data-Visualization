@@ -140,7 +140,7 @@ server <- function(input, output, session) {
       input$speed
     },
     {
-      # TODO: Move width calculation to load_data.R
+
       trips <- data$trips[[paste(input$hour, input$day, sep = ".")]][, ]
       max_factor <- 1000
       trips$width <- input$width * trips$amount / max_factor

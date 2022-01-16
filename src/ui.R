@@ -2,9 +2,11 @@ library(shiny)
 library(shinydashboard)
 library(chorddiag)
 library(mapdeck)
+library(leaflet)
 
-# TODO: Unify color palettes and justify them
+# TODO: Unify color palettes and justify their use
 
+# TODO: What to do with Mapbox token?
 # Mapbox token
 key <- "pk.eyJ1IjoiamF2aWVnYWwiLCJhIjoiY2t5ZDU0NGo1MDEyMTMwcXBqOWxuaWQ1aSJ9.R8Jpo0pPpa8Ow46YQry_Wg"
 set_token(key)
@@ -24,6 +26,175 @@ names(hours) <- sprintf("%02d:00-%02d:59", 0:23, 0:23)
 plot_types <- c("cluster", "heatmap", "pairplot")
 names(plot_types) <- c("Clusters", "Heat map", "Pair plot")
 
+# Trips flow user interface
+flowUI <- function(id) {
+  ns <- NS(id)
+
+  tabItem(
+    tabName = "trips",
+    fluidRow(
+      column(
+        2, box(
+          title = "Time and week day", status = "primary", height = "auto",
+          solidHeader = TRUE, width = NULL,
+          selectInput(ns("day"), h3("Week day"),
+            choices = week_days, selected = "Monday"
+          ),
+          selectInput(ns("hour"), h3("Time"),
+            choices = hours, selected = 17
+          )
+        )
+      ),
+      column(
+        6, box(
+          title = "Flow map", status = "primary",
+          solidHeader = TRUE, height = "auto", width = NULL,
+          # FIXME: Mapdeck not working with modules
+          mapdeckOutput(outputId = ns("map"), height = 650),
+          box(fluidRow(
+            column(
+              2, fluidRow(column(12,
+                align = "center",
+                actionButton(ns("pitch_up"),
+                  label = NULL,
+                  icon = icon("angle-up"),
+                )
+              ), column(
+                6,
+                align = "right",
+                actionButton(ns("bearing_left"),
+                  label = NULL,
+                  icon = icon("angle-left")
+                )
+              ), column(6,
+                align = "left",
+                actionButton(ns("bearing_right"),
+                  label = NULL,
+                  icon = icon("angle-right")
+                )
+              ), column(12,
+                align = "center",
+                actionButton(ns("pitch_down"),
+                  label = NULL,
+                  icon = icon("angle-down")
+                )
+              ))
+            ),
+            column(4, selectInput(ns("styles"), "Map style",
+              choices = styles,
+              selected = "streets"
+            )),
+            column(2, sliderInput(ns("width"),
+              label = "Width:",
+              min = 0, max = 100, value = 50, ticks = FALSE
+            )),
+            column(2, sliderInput(ns("length"),
+              label = "Length:",
+              min = 0, max = 500, value = 50, ticks = FALSE
+            )),
+            column(2, sliderInput(ns("speed"),
+              label = "Speed:",
+              min = 0, max = 500, value = 50, ticks = FALSE
+            ))
+          ), width = NULL)
+        )
+      ),
+      column(
+        4, box(
+          title = "Chord diagram", status = "primary", solidHeader = TRUE,
+          chorddiagOutput(ns("chord"), height = 805),
+          width = NULL, height = "auto"
+        )
+      )
+    )
+  )
+}
+
+# Tips user interface
+tipsUI <- function(id) {
+  ns <- NS(id)
+
+  tabItem(
+    tabName = "tips",
+    fluidRow(
+      column(3, box(
+        title = "Options", status = "primary", height = "auto",
+        solidHeader = TRUE, width = NULL,
+        selectInput(ns("tips_select"), h3("What to visualize?"),
+          choices = c("Tips", "Trip length", "Disputes")
+        ),
+        conditionalPanel(
+          condition = "input[['{tips_select}']] == 'Tips'",
+          radioButtons(
+            ns("PU_DO"), "Show tip values by:",
+            c("Origin" = "orig", "Destination" = "dest")
+          ),
+          radioButtons(
+            ns("MN_MD"), "Show:",
+            c("Mean tip" = "mn", "Median tip" = "md")
+          )
+        ),
+        conditionalPanel(
+          condition = "input[['{tips_select}']] == 'Trip length'",
+          radioButtons(ns("PU_DO2"), "Show distance values by:",
+            c("Origin" = "orig", "Destination" = "dest"),
+            selected = "orig"
+          ),
+          radioButtons(
+            ns("MN_MD2"), "Statistic:",
+            c("Mean distance" = "mn", "Median distance" = "md")
+          )
+        ),
+        conditionalPanel(
+          condition = "input[['{tips_select}']] == 'Disputes'",
+          radioButtons(
+            ns("PU_DO3"), "Show dispute percentage by:",
+            c("Origin" = "orig", "Destination" = "dest")
+          )
+        )
+      )),
+      column(
+        9, box(
+          title = "Choropleth map", status = "primary", height = "auto",
+          solidHeader = TRUE, width = NULL,
+          leafletOutput(ns("choropleth_map"))
+        )
+      )
+    )
+  )
+}
+
+# Clustering user
+clusteringUI <- function(id) {
+  ns <- NS(id)
+
+  tabItem(
+    tabName = "clustering",
+    fluidRow(
+      column(3, box(
+        title = "Options", status = "primary", height = "auto",
+        solidHeader = TRUE, width = NULL,
+        selectInput(ns("plot_type"), h3("Type of plot"),
+          choices = plot_types,
+          selected = "cluster"
+        ),
+        sliderInput(ns("clusters"),
+          label = "Number of clusters:",
+          min = 1, max = 5, value = 3, ticks = FALSE
+        )
+      )),
+      column(
+        9,
+        box(
+          title = "Clustering plot", status = "primary", height = "auto",
+          solidHeader = TRUE, width = NULL,
+          plotOutput(outputId = ns("cluster_plot"))
+        )
+      )
+    )
+  )
+}
+
 shinyUI(dashboardPage(
   skin = "black",
   dashboardHeader(title = "NYC Taxi"),
@@ -36,106 +207,9 @@ shinyUI(dashboardPage(
   ),
   dashboardBody(
     tabItems(
-      tabItem(
-        tabName = "trips",
-        fluidRow(
-          column(
-            2, box(
-              title = "Time and week day", status = "primary", height = "auto",
-              solidHeader = TRUE, width = NULL,
-              selectInput("day", h3("Week day"),
-                choices = week_days, selected = "Monday"
-              ),
-              selectInput("hour", h3("Time"),
-                choices = hours, selected = 17
-              )
-            )
-          ),
-          column(
-            6, box(
-              title = "Flow map", status = "primary",
-              solidHeader = TRUE, height = "auto", width = NULL,
-              mapdeckOutput("map", height = 650),
-              box(fluidRow(
-                column(
-                  2, fluidRow(column(12,
-                    align = "center",
-                    actionButton("pitch_up",
-                      label = NULL,
-                      icon = icon("angle-up"),
-                    )
-                  ), column(
-                    6, align = "right",
-                    actionButton("bearing_left",
-                      label = NULL,
-                      icon = icon("angle-left")
-                    )), column(6, align = "left",
-                    actionButton("bearing_right",
-                      label = NULL,
-                      icon = icon("angle-right")
-                    )
-                  ), column(12,
-                    align = "center",
-                    actionButton("pitch_down",
-                      label = NULL,
-                      icon = icon("angle-down")
-                    )
-                  ))
-                ),
-                column(4, selectInput("styles", h3("Map style"),
-                  choices = styles,
-                  selected = "streets"
-                )),
-                column(2, sliderInput("width",
-                  label = "Width:",
-                  min = 0, max = 100, value = 50, ticks = FALSE
-                )),
-                column(2, sliderInput("length",
-                  label = "Length:",
-                  min = 0, max = 500, value = 50, ticks = FALSE
-                )),
-                column(2, sliderInput("speed",
-                  label = "Speed:",
-                  min = 0, max = 500, value = 50, ticks = FALSE
-                ))
-              ), width = NULL)
-            )
-          ),
-          column(
-            4, box(
-              title = "Chord diagram", status = "primary", solidHeader = TRUE,
-              chorddiagOutput("chord", height = 805),
-              width = NULL, height = "auto"
-            )
-          )
-        )
-      ),
-      tabItem(
-        tabName = "clustering",
-        fluidRow(
-          column(3, box(
-            title = "Options", status = "primary", height = "auto",
-            solidHeader = TRUE, width = NULL,
-            selectInput("plot_type", h3("Type of plot"),
-              choices = plot_types,
-              selected = "cluster"
-            ),
-            sliderInput("clusters",
-              label = "Number of clusters:",
-              min = 1, max = 5, value = 3, ticks = FALSE
-            )
-          )),
-          column(
-            9,
-            box(
-              title = "Clustering plot", status = "primary", height = "auto",
-              solidHeader = TRUE, width = NULL,
-              plotOutput(outputId = "cluster_plot")
-            )
-          )
-        )
-      ),
-      tabItem(tabName = "clustering")
+      flowUI("trips_flow"),
+      tipsUI("tips"),
+      clusteringUI("clustering")
     )
   )
 ))
