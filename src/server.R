@@ -2,7 +2,13 @@ library(shiny)
 library(shinydashboard)
 library(chorddiag)
 library(mapdeck)
-source("load_flow_data.R")
+library(here)
+library(factoextra)
+library(tidyr)
+library(RColorBrewer)
+library(data.table)
+library(GGally)
+source(here("src", "load_flow_data.R"))
 
 # TODO: Unify data loading and data preprocessing (another file)
 
@@ -19,9 +25,11 @@ update_map <- function(pitch, bearing) {
 
 
 shinyServer(function(input, output, session) {
-  # 1.- Trips flow
+  # Load all data
   data <- get.data()
-  load("clustering.RData")
+  load(here("src", "clustering.RData"))
+
+  # 1.- Trips flow
   pitch <- 0
   bearing <- 150
   rv_map <- reactiveValues(bearing = bearing, pitch = pitch)
@@ -160,7 +168,6 @@ shinyServer(function(input, output, session) {
   # 3.- Clustering
   # TODO: Don't recalculate clusters each time, save them
   kmeans.re <- reactive(kmeans(taxi, centers = input$clusters, nstart = 20))
-
 
   observeEvent(
     {

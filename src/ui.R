@@ -20,7 +20,7 @@ hours <- sprintf("%02d", 0:23)
 names(hours) <- sprintf("%02d:00-%02d:59", 0:23, 0:23)
 
 plot_types <- c("cluster", "heatmap", "pairplot")
-plot_types <- c("Cluster", "Heat map", "Pair plot")
+names(plot_types) <- c("Clusters", "Heat map", "Pair plot")
 
 shinyUI(dashboardPage(
   skin = "black",

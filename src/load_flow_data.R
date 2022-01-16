@@ -23,8 +23,8 @@ get.boroughs.matrix <- function(df, zones) {
 
 # Returns all data the Shiny app needs
 get.data <- function() {
-  if (!file.exists(here("trips_flow.RData"))) {
-    taxi_data <- read.csv(here("..", "data", "yellow_tripdata_2019-01.csv"))
+  if (!file.exists(here("src", "trips_flow.RData"))) {
+    taxi_data <- read.csv(here("data", "yellow_tripdata_2019-01.csv"))
     taxi_data$amount <- rep(1, nrow(taxi_data)) # Auxiliary column
     
     # Add pick up hour and pick up date
@@ -42,7 +42,7 @@ get.data <- function() {
     Sys.setlocale("LC_TIME", lc_time)
     
     shape <- spTransform(
-      readOGR(here("..", "data", "taxi_zones.shp")),
+      readOGR(here("data", "taxi_zones.shp")),
       CRS("+proj=longlat +datum=WGS84 +no_defs")
     )
     shapeData <- geojson_json(shape)
@@ -61,7 +61,7 @@ get.data <- function() {
       split(~ pickup_hour + pickup_day)
 
     # Get boroughs trip flow matrices
-    taxi_zones <- read.csv(here("..", "data", "taxi+_zone_lookup.csv"))
+    taxi_zones <- read.csv(here("data", "taxi+_zone_lookup.csv"))
     mtrcs_boroughs <- lapply(dfs, get.boroughs.matrix, taxi_zones)
     
     # Get zone trip flow data frames
@@ -69,9 +69,9 @@ get.data <- function() {
       aggregate(amount ~ Orlng + Orlat + Dstlng + Dstlat, i, sum)
     })
 
-    save(mtrcs_boroughs, shapeData, trips, coord, file = "trips_flow.RData")
+    save(mtrcs_boroughs, shapeData, trips, coord, file = here("src", "trips_flow.RData"))
   } else {
-    load("trips_flow.RData")
+    load(here("src", "trips_flow.RData"))
   }
 
   return(list(
