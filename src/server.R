@@ -10,10 +10,17 @@ library(data.table)
 library(GGally)
 source(here("src", "load_flow_data.R"))
 
+styles <- c(
+  "oranges", "inferno", "inferno", "inferno", "heat", "topo"
+)
+names(styles) <- c(
+  "dark", "light", "outdoors", "streets", "satellite", "satellite-streets"
+)
+
 # TODO: Unify data loading and data preprocessing (another file)
 
 update_map <- function(pitch, bearing) {
-  # TODO: Change location to current location
+  # TODO: Update to current location with current zoom
   mapdeck_update(map_id = "map") %>% mapdeck_view(
     location = c(-73.983504, 40.697824),
     pitch = pitch,
@@ -34,21 +41,13 @@ shinyServer(function(input, output, session) {
   bearing <- 150
   rv_map <- reactiveValues(bearing = bearing, pitch = pitch)
 
-  # TODO: Fix zones names in geojson. If not used, remove coord load
+  # FIXME: Zones names in geojson. If not used, remove coord load
   output$map <- renderMapdeck(mapdeck(
     location = c(-73.983504, 40.697824),
     pitch = pitch,
     bearing = bearing
   ) %>%
     add_title(title = "NYC Taxi") %>%
-    add_geojson(
-      data = data$shapeData,
-      fill_opacity = 45,
-      stroke_width = 50,
-      palette = "inferno",
-      auto_highlight = TRUE,
-      layer_id = "shapes",
-    ) %>%
     # add_text(
     #   data = data$coord,
     #   lon = "V1",
@@ -106,14 +105,28 @@ shinyServer(function(input, output, session) {
     }
   )
 
-  # TODO: Update shapes palette depending on selected style
+  # TODO: Do shapes update with current zoom
   observeEvent(
     {
       input$styles
     },
     {
       mapdeck_update(map_id = "map") %>%
-        update_style(style = mapdeck_style(input$styles))
+        update_style(style = mapdeck_style(input$styles)) %>%
+        add_geojson(
+          data = data$shapeData,
+          fill_opacity = 45,
+          stroke_width = 50,
+          palette = styles[input$styles],
+          auto_highlight = TRUE,
+          layer_id = "shapes",
+        ) %>% 
+        mapdeck_view(
+          location = c(-73.983504, 40.697824),
+          zoom = 10,
+          pitch = rv_map$pitch,
+          bearing = rv_map$bearing,
+        )
     }
   )
 
@@ -126,10 +139,11 @@ shinyServer(function(input, output, session) {
       input$speed
     },
     {
-      # TODO: Move width calculation to load_data.R
+      # TODO: Check flow direction
+      # TODO: Same origin and destination trips?
+      # TODO: Animated arcs or animated lines?
       trips <- data$trips[[paste(input$hour, input$day, sep = ".")]][, ]
-      max_factor <- 1000
-      trips$width <- input$width * trips$amount / max_factor
+      trips$width <- input$width * trips$busy_index
       mapdeck_update(map_id = "map") %>%
         add_animated_arc(
           data = trips,

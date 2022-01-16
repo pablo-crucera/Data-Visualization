@@ -3,6 +3,8 @@ library(shinydashboard)
 library(chorddiag)
 library(mapdeck)
 
+# TODO: Unify color palettes and justify them
+
 # Mapbox token
 key <- "pk.eyJ1IjoiamF2aWVnYWwiLCJhIjoiY2t5ZDU0NGo1MDEyMTMwcXBqOWxuaWQ1aSJ9.R8Jpo0pPpa8Ow46YQry_Wg"
 set_token(key)
