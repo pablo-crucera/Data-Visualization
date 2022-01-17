@@ -14,7 +14,6 @@ update_map <- function(pitch, bearing, ns, session) {
   # TODO: Update to current location with current zoom
   mapdeck_update(map_id = ns("map"), session = session) %>% mapdeck_view(
     location = c(-73.983504, 40.697824),
-    zoom = 10,
     pitch = pitch,
     bearing = bearing,
     duration = 2000,
@@ -47,8 +46,7 @@ flowServer <- function(id) {
         pitch = pitch,
         bearing = bearing
       ) %>%
-        add_title(title = "NYC Taxi") 
-      # %>%
+        add_title(title = "NYC Taxi") %>%
         # add_text(
         #   data = coord,
         #   lon = "V1",
@@ -59,12 +57,12 @@ flowServer <- function(id) {
         #   size = 16,
         #   brush_radius = 500
         # ) %>%
-        # mapdeck_view( # Needed for initial view in browser
-        #   location = c(-73.983504, 40.697824),
-        #   zoom = 10,
-        #   pitch = pitch,
-        #   bearing = bearing,
-        # )
+        mapdeck_view(
+          location = c(-73.983504, 40.697824),
+          zoom = 10,
+          pitch = pitch,
+          bearing = bearing,
+        )
       )
 
       observeEvent(
@@ -117,16 +115,12 @@ flowServer <- function(id) {
             update_style(style = mapdeck_style(input$styles)) %>%
             add_geojson(
               data = shapeData,
-              fill_opacity = 45,
-              stroke_width = 50,
+              fill_opacity = 25,
+              stroke_width = 30,
               palette = styles[input$styles],
               auto_highlight = TRUE,
               layer_id = "shapes",
-            ) %>%
-            mapdeck_view(
-              location = c(-73.983504, 40.697824),
-              pitch = rv_map$pitch,
-              bearing = rv_map$bearing,
+              update_view = FALSE,
             )
         }
       )
@@ -279,7 +273,7 @@ tipsServer <- function(id) {
           na.color = "#A9A9A9",
           bins = bins
         )
-
+        
         # Generate output map
         leafletProxy("choropleth_map") %>%
           clearShapes() %>%

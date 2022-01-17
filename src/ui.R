@@ -80,7 +80,7 @@ flowUI <- function(id) {
                 ),
                 column(2, selectInput(ns("styles"), "Map style",
                   choices = styles,
-                  selected = "streets"
+                  selected = "light"
                 )),
                 column(2, sliderInput(ns("width"),
                   label = "Width:",
@@ -117,8 +117,8 @@ flowUI <- function(id) {
 # Tips user interface
 tipsUI <- function(id) {
   ns <- NS(id)
-  
-  # FIXME: Conditional panel with modules
+
+  # FIXME: 
   tabItem(
     tabName = "tips",
     sidebarLayout(
