@@ -14,6 +14,7 @@ update_map <- function(pitch, bearing, ns, session) {
   # TODO: Update to current location with current zoom
   mapdeck_update(map_id = ns("map"), session = session) %>% mapdeck_view(
     location = c(-73.983504, 40.697824),
+    zoom = 10,
     pitch = pitch,
     bearing = bearing,
     duration = 2000,
@@ -37,7 +38,7 @@ flowServer <- function(id) {
       )
 
       pitch <- 0
-      bearing <- 150
+      bearing <- 0
       rv_map <- reactiveValues(bearing = bearing, pitch = pitch, ns = ns)
 
       # FIXME: Zones names in geojson. If not used, remove coord load
@@ -46,7 +47,8 @@ flowServer <- function(id) {
         pitch = pitch,
         bearing = bearing
       ) %>%
-        add_title(title = "NYC Taxi") %>%
+        add_title(title = "NYC Taxi") 
+      # %>%
         # add_text(
         #   data = coord,
         #   lon = "V1",
@@ -57,12 +59,13 @@ flowServer <- function(id) {
         #   size = 16,
         #   brush_radius = 500
         # ) %>%
-        mapdeck_view( # Needed for initial view in browser
-          location = c(-73.983504, 40.697824),
-          zoom = 10,
-          pitch = pitch,
-          bearing = bearing,
-        ))
+        # mapdeck_view( # Needed for initial view in browser
+        #   location = c(-73.983504, 40.697824),
+        #   zoom = 10,
+        #   pitch = pitch,
+        #   bearing = bearing,
+        # )
+      )
 
       observeEvent(
         {
@@ -70,7 +73,6 @@ flowServer <- function(id) {
         },
         {
           rv_map$pitch <- max(rv_map$pitch - 10, 0)
-          print(rv_map$pitch)
           update_map(rv_map$pitch, rv_map$bearing, ns = ns, session = session)
         }
       )
@@ -123,7 +125,6 @@ flowServer <- function(id) {
             ) %>%
             mapdeck_view(
               location = c(-73.983504, 40.697824),
-              zoom = 10,
               pitch = rv_map$pitch,
               bearing = rv_map$bearing,
             )

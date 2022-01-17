@@ -117,7 +117,7 @@ flowUI <- function(id) {
 # Tips user interface
 tipsUI <- function(id) {
   ns <- NS(id)
-
+  
   # FIXME: Conditional panel with modules
   tabItem(
     tabName = "tips",
@@ -129,7 +129,7 @@ tipsUI <- function(id) {
           selected = "Trips"
         ),
         conditionalPanel(
-          condition = "input[['{select}']] == 'Tips'",
+          condition = "input['select'] == 'Tips'",
           radioButtons(
             ns("PU_DO"), "Show tip values by:",
             c("Origin" = "orig", "Destination" = "dest")
@@ -140,7 +140,7 @@ tipsUI <- function(id) {
           ), ns = ns
         ),
         conditionalPanel(
-          condition = "input[['{select}']] == 'Trip length'",
+          condition = "input['select'] == 'Trip length'",
           radioButtons(ns("PU_DO2"), "Show distance values by:",
             c("Origin" = "orig", "Destination" = "dest"),
             selected = "orig"
@@ -151,7 +151,7 @@ tipsUI <- function(id) {
           ), ns = ns
         ),
         conditionalPanel(
-          condition = "input[['{select}']] == 'Disputes'",
+          condition = "input['select'] == 'Disputes'",
           radioButtons(
             ns("PU_DO3"), "Show dispute percentage by:",
             c("Origin" = "orig", "Destination" = "dest")
