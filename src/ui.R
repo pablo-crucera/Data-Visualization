@@ -3,6 +3,7 @@ library(shinydashboard)
 library(chorddiag)
 library(mapdeck)
 library(leaflet)
+library(shinyWidgets)
 
 # TODO: Unify color palettes and justify their use
 
@@ -26,81 +27,87 @@ flowUI <- function(id) {
 
   hours <- sprintf("%02d", 0:23)
   names(hours) <- sprintf("%02d:00-%02d:59", 0:23, 0:23)
-  
+
+  # FIXME: Mapdeck map is not always shown
   tabItem(
     tabName = "trips",
-    fluidRow(
-      column(
-        2, box(
-          title = "Time and week day", status = "primary", height = "auto",
-          solidHeader = TRUE, width = NULL,
-          selectInput(ns("day"), h3("Week day"),
-            choices = week_days, selected = "Monday"
+    sidebarLayout(
+      sidebarPanel(
+        width = 2,
+        selectInput(ns("day"), h3("Week day"),
+          choices = week_days, selected = "Monday"
+        ),
+        selectInput(ns("hour"), h3("Time"),
+          choices = hours, selected = 17
+        )
+      ),
+      mainPanel(
+        width = 10,
+        fluidRow(
+          column(
+            7, box(
+              title = "Flow map", status = "primary",
+              solidHeader = TRUE, height = "auto", width = NULL,
+              mapdeckOutput(outputId = ns("map"), height = 655),
+              fluidRow(
+                column(
+                  2, fluidRow(column(12,
+                    align = "center",
+                    actionBttn(ns("pitch_up"), size = "xs", style = "material-circle",
+                      label = NULL,
+                      icon = icon("angle-up"),
+                    )
+                  ), column(
+                    6,
+                    align = "right",
+                    actionBttn(ns("bearing_left"), size = "xs", style = "material-circle",
+                      label = NULL,
+                      icon = icon("angle-left")
+                    )
+                  ), column(6,
+                    align = "left",
+                    actionBttn(ns("bearing_right"), size = "xs", style = "material-circle",
+                      label = NULL,
+                      icon = icon("angle-right")
+                    )
+                  ), column(12,
+                    align = "center",
+                    actionBttn(ns("pitch_down"), size = "xs", style = "material-circle",
+                      label = NULL,
+                      icon = icon("angle-down")
+                    )
+                  ))
+                ),
+                column(2, selectInput(ns("styles"), "Map style",
+                  choices = styles,
+                  selected = "streets"
+                )),
+                column(2, sliderInput(ns("width"),
+                  label = "Width:",
+                  min = 0, max = 100, value = 50, ticks = FALSE
+                )),
+                column(2, sliderInput(ns("length"),
+                  label = "Length:",
+                  min = 0, max = 500, value = 50, ticks = FALSE
+                )),
+                column(2, sliderInput(ns("speed"),
+                  label = "Speed:",
+                  min = 0, max = 500, value = 50, ticks = FALSE
+                )),
+                column(2, radioButtons(
+                  ns("flow"), "Flow style",
+                  c("Arcs", "Lines")
+                ))
+              )
+            )
           ),
-          selectInput(ns("hour"), h3("Time"),
-            choices = hours, selected = 17
+          column(
+            5, box(
+              title = "Chord diagram", status = "primary", solidHeader = TRUE,
+              chorddiagOutput(ns("chord"), height = 800),
+              width = NULL, height = "auto"
+            )
           )
-        )
-      ),
-      column(
-        6, box(
-          title = "Flow map", status = "primary",
-          solidHeader = TRUE, height = "auto", width = NULL,
-          # FIXME: Mapdeck not working with modules
-          mapdeckOutput(outputId = ns("map"), height = 650),
-          box(fluidRow(
-            column(
-              2, fluidRow(column(12,
-                align = "center",
-                actionButton(ns("pitch_up"),
-                  label = NULL,
-                  icon = icon("angle-up"),
-                )
-              ), column(
-                6,
-                align = "right",
-                actionButton(ns("bearing_left"),
-                  label = NULL,
-                  icon = icon("angle-left")
-                )
-              ), column(6,
-                align = "left",
-                actionButton(ns("bearing_right"),
-                  label = NULL,
-                  icon = icon("angle-right")
-                )
-              ), column(12,
-                align = "center",
-                actionButton(ns("pitch_down"),
-                  label = NULL,
-                  icon = icon("angle-down")
-                )
-              ))
-            ),
-            column(4, selectInput(ns("styles"), "Map style",
-              choices = styles,
-              selected = "streets"
-            )),
-            column(2, sliderInput(ns("width"),
-              label = "Width:",
-              min = 0, max = 100, value = 50, ticks = FALSE
-            )),
-            column(2, sliderInput(ns("length"),
-              label = "Length:",
-              min = 0, max = 500, value = 50, ticks = FALSE
-            )),
-            column(2, sliderInput(ns("speed"),
-              label = "Speed:",
-              min = 0, max = 500, value = 50, ticks = FALSE
-            ))
-          ), width = NULL)
-        )
-      ),
-      column(
-        4, box(
-          title = "Chord diagram", status = "primary", solidHeader = TRUE,
-          chorddiagOutput(ns("chord"), height = 805),
-          width = NULL, height = "auto"
         )
       )
     )
@@ -114,10 +121,9 @@ tipsUI <- function(id) {
   # FIXME: Conditional panel with modules
   tabItem(
     tabName = "tips",
-    fluidRow(
-      column(3, box(
-        title = "Options", status = "primary", height = "auto",
-        solidHeader = TRUE, width = NULL,
+    sidebarLayout(
+      sidebarPanel(
+        width = 2,
         selectInput(ns("select"), h3("What to visualize?"),
           choices = c("Tips", "Trip length", "Disputes"),
           selected = "Trips"
@@ -151,12 +157,13 @@ tipsUI <- function(id) {
             c("Origin" = "orig", "Destination" = "dest")
           ), ns = ns
         )
-      )),
-      column(
-        9, box(
+      ),
+      mainPanel(
+        width = 10,
+        box(
           title = "Choropleth map", status = "primary", height = "auto",
           solidHeader = TRUE, width = NULL,
-          leafletOutput(ns("choropleth_map"))
+          leafletOutput(ns("choropleth_map"), height = 800)
         )
       )
     )
@@ -172,10 +179,9 @@ clusteringUI <- function(id) {
 
   tabItem(
     tabName = "clustering",
-    fluidRow(
-      column(3, box(
-        title = "Options", status = "primary", height = "auto",
-        solidHeader = TRUE, width = NULL,
+    sidebarLayout(
+      sidebarPanel(
+        width = 2,
         selectInput(ns("plot_type"), h3("Type of plot"),
           choices = plot_types,
           selected = "cluster"
@@ -184,13 +190,13 @@ clusteringUI <- function(id) {
           label = "Number of clusters:",
           min = 1, max = 5, value = 3, ticks = FALSE
         )
-      )),
-      column(
-        9,
+      ),
+      mainPanel(
+        width = 10,
         box(
           title = "Clustering plot", status = "primary", height = "auto",
           solidHeader = TRUE, width = NULL,
-          plotOutput(outputId = ns("cluster_plot"))
+          plotOutput(outputId = ns("cluster_plot"), height = 800)
         )
       )
     )
