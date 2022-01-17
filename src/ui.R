@@ -6,30 +6,27 @@ library(leaflet)
 
 # TODO: Unify color palettes and justify their use
 
-# TODO: What to do with Mapbox token?
-# Mapbox token
-key <- "pk.eyJ1IjoiamF2aWVnYWwiLCJhIjoiY2t5ZDU0NGo1MDEyMTMwcXBqOWxuaWQ1aSJ9.R8Jpo0pPpa8Ow46YQry_Wg"
-set_token(key)
-
-# Get week days
-styles <- c(
-  "dark", "light", "outdoors", "streets", "satellite", "satellite-streets"
-)
-lc_time <- Sys.getlocale("LC_TIME")
-Sys.setlocale("LC_TIME", "en_US.UTF-8") # Needed to get week days in English
-week_days <- weekdays(seq(Sys.Date(), Sys.Date() + 6, by = "days"))
-Sys.setlocale("LC_TIME", lc_time)
-
-hours <- sprintf("%02d", 0:23)
-names(hours) <- sprintf("%02d:00-%02d:59", 0:23, 0:23)
-
-plot_types <- c("cluster", "heatmap", "pairplot")
-names(plot_types) <- c("Clusters", "Heat map", "Pair plot")
-
 # Trips flow user interface
 flowUI <- function(id) {
   ns <- NS(id)
 
+  # TODO: What to do with Mapbox token?
+  # Mapbox token
+  key <- "pk.eyJ1IjoiamF2aWVnYWwiLCJhIjoiY2t5ZDU0NGo1MDEyMTMwcXBqOWxuaWQ1aSJ9.R8Jpo0pPpa8Ow46YQry_Wg"
+  set_token(key)
+
+  # Get week days
+  styles <- c(
+    "dark", "light", "outdoors", "streets", "satellite", "satellite-streets"
+  )
+  lc_time <- Sys.getlocale("LC_TIME")
+  Sys.setlocale("LC_TIME", "en_US.UTF-8") # Needed to get week days in English
+  week_days <- weekdays(seq(Sys.Date(), Sys.Date() + 6, by = "days"))
+  Sys.setlocale("LC_TIME", lc_time)
+
+  hours <- sprintf("%02d", 0:23)
+  names(hours) <- sprintf("%02d:00-%02d:59", 0:23, 0:23)
+  
   tabItem(
     tabName = "trips",
     fluidRow(
@@ -114,17 +111,19 @@ flowUI <- function(id) {
 tipsUI <- function(id) {
   ns <- NS(id)
 
+  # FIXME: Conditional panel with modules
   tabItem(
     tabName = "tips",
     fluidRow(
       column(3, box(
         title = "Options", status = "primary", height = "auto",
         solidHeader = TRUE, width = NULL,
-        selectInput(ns("tips_select"), h3("What to visualize?"),
-          choices = c("Tips", "Trip length", "Disputes")
+        selectInput(ns("select"), h3("What to visualize?"),
+          choices = c("Tips", "Trip length", "Disputes"),
+          selected = "Trips"
         ),
         conditionalPanel(
-          condition = "input[['{tips_select}']] == 'Tips'",
+          condition = "input[['{select}']] == 'Tips'",
           radioButtons(
             ns("PU_DO"), "Show tip values by:",
             c("Origin" = "orig", "Destination" = "dest")
@@ -132,10 +131,10 @@ tipsUI <- function(id) {
           radioButtons(
             ns("MN_MD"), "Show:",
             c("Mean tip" = "mn", "Median tip" = "md")
-          )
+          ), ns = ns
         ),
         conditionalPanel(
-          condition = "input[['{tips_select}']] == 'Trip length'",
+          condition = "input[['{select}']] == 'Trip length'",
           radioButtons(ns("PU_DO2"), "Show distance values by:",
             c("Origin" = "orig", "Destination" = "dest"),
             selected = "orig"
@@ -143,14 +142,14 @@ tipsUI <- function(id) {
           radioButtons(
             ns("MN_MD2"), "Statistic:",
             c("Mean distance" = "mn", "Median distance" = "md")
-          )
+          ), ns = ns
         ),
         conditionalPanel(
-          condition = "input[['{tips_select}']] == 'Disputes'",
+          condition = "input[['{select}']] == 'Disputes'",
           radioButtons(
             ns("PU_DO3"), "Show dispute percentage by:",
             c("Origin" = "orig", "Destination" = "dest")
-          )
+          ), ns = ns
         )
       )),
       column(
@@ -167,6 +166,9 @@ tipsUI <- function(id) {
 # Clustering user
 clusteringUI <- function(id) {
   ns <- NS(id)
+
+  plot_types <- c("cluster", "heatmap", "pairplot")
+  names(plot_types) <- c("Clusters", "Heat map", "Pair plot")
 
   tabItem(
     tabName = "clustering",
@@ -202,7 +204,10 @@ shinyUI(dashboardPage(
     sidebarMenu(
       menuItem("Trips flow", tabName = "trips", icon = icon("taxi")),
       menuItem("Tips", tabName = "tips", icon = icon("coins")),
-      menuItem("Clustering", tabName = "clustering", icon = icon("project-diagram"))
+      menuItem("Clustering",
+        tabName = "clustering",
+        icon = icon("project-diagram")
+      )
     )
   ),
   dashboardBody(

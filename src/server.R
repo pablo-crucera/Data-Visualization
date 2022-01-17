@@ -8,48 +8,11 @@ library(RColorBrewer)
 library(data.table)
 library(GGally)
 library(leaflet)
-source(here("src", "load_flow_data.R"))
-source(here("choropleth", "choropleth.R"))
 
 
-styles <- c(
-  "oranges", "inferno", "inferno", "inferno", "heat", "topo"
-)
-names(styles) <- c(
-  "dark", "light", "outdoors", "streets", "satellite", "satellite-streets"
-)
-
-getData <- function(pathfile) {
-  
-  if (file.exists(here("src", "choropleth.RData"))) {
-    load(here("src", "choropleth.RData"))
-  }
-  else {
-    # Read taxi data
-    taxis <- read.csv(pathfile,header=TRUE)
-    
-    # Preprocess taxi data
-    tips <- preprocessTips(taxis=taxis)
-    dist <- preprocessDist(taxis=taxis)
-    disp <- preprocessDispute(taxis=taxis)
-    
-    # Read map
-    shapeData <- spTransform(readOGR(here("data",'taxi_zones.shp')), 
-                             CRS("+proj=longlat +datum=WGS84 +no_defs"))
-    
-    # Export file
-    save(tips, dist, disp, shapeData,
-         file = here("src", "choropleth.RData"))
-  }
-  
-  return(list(shapeData=shapeData, tips=tips, dist=dist, disp=disp))
-}
-
-# TODO: Unify data loading and data preprocessing (another file)
-
-update_map <- function(pitch, bearing) {
+update_map <- function(pitch, bearing, ns, session) {
   # TODO: Update to current location with current zoom
-  mapdeck_update(map_id = "map") %>% mapdeck_view(
+  mapdeck_update(map_id = ns("map"), session = session) %>% mapdeck_view(
     location = c(-73.983504, 40.697824),
     pitch = pitch,
     bearing = bearing,
@@ -59,14 +22,23 @@ update_map <- function(pitch, bearing) {
 }
 
 flowServer <- function(id){
+  ns <- NS(id)
+
   moduleServer(
     id,
     function(input, output, session){
-      data <- get.data()
+      load(here("data", "trips_flow.RData"))
+      
+      styles <- c(
+        "oranges", "inferno", "inferno", "inferno", "heat", "topo"
+      )
+      names(styles) <- c(
+        "dark", "light", "outdoors", "streets", "satellite", "satellite-streets"
+      )
       
       pitch <- 0
       bearing <- 150
-      rv_map <- reactiveValues(bearing = bearing, pitch = pitch)
+      rv_map <- reactiveValues(bearing = bearing, pitch = pitch, ns = ns)
       
       # FIXME: Zones names in geojson. If not used, remove coord load
       output$map <- renderMapdeck(mapdeck(
@@ -76,7 +48,7 @@ flowServer <- function(id){
       ) %>%
         add_title(title = "NYC Taxi") %>%
         # add_text(
-        #   data = data$coord,
+        #   data = coord,
         #   lon = "V1",
         #   lat = "V2",
         #   fill_colour = "#000000",
@@ -98,7 +70,7 @@ flowServer <- function(id){
         },
         {
           rv_map$pitch <- max(rv_map$pitch - 10, 0)
-          update_map(rv_map$pitch, rv_map$bearing)
+          update_map(rv_map$pitch, rv_map$bearing, ns = ns, session = session)
         }
       )
       
@@ -108,7 +80,7 @@ flowServer <- function(id){
         },
         {
           rv_map$pitch <- min(rv_map$pitch + 10, 60)
-          update_map(rv_map$pitch, rv_map$bearing)
+          update_map(rv_map$pitch, rv_map$bearing, ns = ns, session = session)
         }
       )
       
@@ -118,7 +90,7 @@ flowServer <- function(id){
         },
         {
           rv_map$bearing <- rv_map$bearing - 10
-          update_map(rv_map$pitch, rv_map$bearing)
+          update_map(rv_map$pitch, rv_map$bearing, ns = ns, session = session)
         }
       )
       
@@ -128,7 +100,7 @@ flowServer <- function(id){
         },
         {
           rv_map$bearing <- rv_map$bearing + 10
-          update_map(rv_map$pitch, rv_map$bearing)
+          update_map(rv_map$pitch, rv_map$bearing, ns = ns, session = session)
         }
       )
       
@@ -138,10 +110,10 @@ flowServer <- function(id){
           input$styles
         },
         {
-          mapdeck_update(map_id = "map") %>%
+          mapdeck_update(map_id = ns("map"), session = session) %>%
             update_style(style = mapdeck_style(input$styles)) %>%
             add_geojson(
-              data = data$shapeData,
+              data = shapeData,
               fill_opacity = 45,
               stroke_width = 50,
               palette = styles[input$styles],
@@ -169,9 +141,9 @@ flowServer <- function(id){
           # TODO: Check flow direction
           # TODO: Same origin and destination trips?
           # TODO: Animated arcs or animated lines?
-          trips <- data$trips[[paste(input$hour, input$day, sep = ".")]][, ]
+          trips <- trips[[paste(input$hour, input$day, sep = ".")]][, ]
           trips$width <- input$width * trips$busy_index
-          mapdeck_update(map_id = "map") %>%
+          mapdeck_update(map_id = ns("map"), session = session) %>%
             add_animated_arc(
               data = trips,
               origin = c("Orlng", "Orlat"),
@@ -193,7 +165,7 @@ flowServer <- function(id){
         },
         {
           output$chord <- renderChorddiag({
-            chorddiag(data$mtrcs_boroughs[[paste(input$hour,
+            chorddiag(mtrcs_boroughs[[paste(input$hour,
                                                  input$day,
                                                  sep = "."
             )]][, ],
@@ -208,13 +180,11 @@ flowServer <- function(id){
 }
 
 
-tripsServer <- function(id) {
+tipsServer <- function(id) {
   moduleServer(
     id,
     function(input, output, session) {
-      choropleth_data <- getData(here("data", "yellow_tripdata_2019-01.csv"))
-      
-      shapeData <- choropleth_data$shapeData
+      load(here("data", "choropleth.RData"))
       
       # Create map
       output$choropleth_map <- renderLeaflet({
@@ -226,52 +196,52 @@ tripsServer <- function(id) {
       # FIXME: Too many things in the observer could be calculated and stored previously
       observe({
         # Set the corresponding values depending on the input
-        if (input$tips_select == "Tips") {
+        if (input$select == "Tips") {
           if (input$PU_DO == "orig" & input$MN_MD == "mn") {
-            shapeData$VAL <- choropleth_data$tips$tipMnOrig$x
+            shapeData$VAL <- tips$tipMnOrig$x
             lims <- c(0.5, 2, 3, 4.5, 7)    # Set intermediate bins for color map
           } else if (input$MN_MD == "mn") {
-            shapeData$VAL <- choropleth_data$tips$tipMnDest$x
+            shapeData$VAL <- tips$tipMnDest$x
             lims <- c(1.5, 2.5, 4, 6, 7.5)
           } else if (input$PU_DO == "orig") {
-            shapeData$VAL <- choropleth_data$tips$tipMdOrig$x
+            shapeData$VAL <- tips$tipMdOrig$x
             lims <- c(0.10, 1, 2, 3, 5)
           } else {
-            shapeData$VAL <- choropleth_data$tips$tipMdDest$x
+            shapeData$VAL <- tips$tipMdDest$x
             lims <- c(0.5, 2, 4, 5.5, 7.5)
           }
           
-          colorPalette = "YlGn"             # Color palette for map
-          strPlot = "Tip statistic: "       # String for map info
-          units = " USD"                    # Units (for  map info)
+          colorPalette <- "YlGn"             # Color palette for map
+          strPlot <- "Tip statistic: "       # String for map info
+          units <- " USD"                    # Units (for  map info)
         } 
         
-        else if (input$tips_select == "Trip length") {
+        else if (input$select == "Trip length") {
           if (input$PU_DO2 == "orig" & input$MN_MD2 == "mn") 
-            shapeData$VAL <- choropleth_data$dist$distMnOrig$x
-          else if (input$MN_MD2 == "mn") shapeData$VAL <- choropleth_data$dist$distMnDest$x 
-          else if (input$PU_DO2 == "orig") shapeData$VAL <- choropleth_data$dist$distMdOrig$x
-          else shapeData$VAL <- choropleth_data$dist$distMdDest$x
+            shapeData$VAL <- dist$distMnOrig$x
+          else if (input$MN_MD2 == "mn") shapeData$VAL <- dist$distMnDest$x 
+          else if (input$PU_DO2 == "orig") shapeData$VAL <- dist$distMdOrig$x
+          else shapeData$VAL <- dist$distMdDest$x
           
           lims <- c(2, 4, 6, 8, 12)
           
-          colorPalette = "BuPu"
-          strPlot = "Trip length statistic: "
-          units = " miles"
+          colorPalette <- "BuPu"
+          strPlot <- "Trip length statistic: "
+          units <- " miles"
         }
         
         else {
           if (input$PU_DO3 == "orig") {
-            shapeData$VAL <- choropleth_data$disp$percOrig
+            shapeData$VAL <- disp$percOrig
           } else {
-            shapeData$VAL <- choropleth_data$disp$percDest
+            shapeData$VAL <- disp$percDest
           }
           
           lims <- c(0.1, 0.2, 0.3, 0.4, 0.7, 1, 2, 5)
           
-          colorPalette = "YlOrRd"
-          strPlot = "Dispute percentage: "
-          units = " %"
+          colorPalette <- "YlOrRd"
+          strPlot <- "Dispute percentage: "
+          units <- " %"
         }
         
         # Create bins for color map
@@ -306,7 +276,7 @@ clusteringServer <- function(id) {
   moduleServer(
     id,
     function(input, output, session) {
-      load(here("src", "clustering.RData"))
+      load(here("data", "clustering.RData"))
       
       # TODO: Don't recalculate clusters each time, save them
       kmeans.re <- reactive(kmeans(taxi, centers = input$clusters, nstart = 20))
@@ -376,6 +346,6 @@ clusteringServer <- function(id) {
 
 shinyServer(function(input, output, session) {
   flowServer("trips_flow")
-  tripsServer("tips")
+  tipsServer("tips")
   clusteringServer("clustering")
 })
