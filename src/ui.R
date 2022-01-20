@@ -104,7 +104,7 @@ flowUI <- function(id) {
           column(
             5, box(
               title = "Chord diagram", status = "primary", solidHeader = TRUE,
-              chorddiagOutput(ns("chord"), height = 800),
+              chorddiagOutput(ns("chord"), height = 750),
               width = NULL, height = "auto"
             )
           )
@@ -114,13 +114,12 @@ flowUI <- function(id) {
   )
 }
 
-# Tips user interface
-tipsUI <- function(id) {
+# Economic stats user interface
+statsUI <- function(id) {
   ns <- NS(id)
 
-  # FIXME: 
   tabItem(
-    tabName = "tips",
+    tabName = "stats",
     sidebarLayout(
       sidebarPanel(
         width = 2,
@@ -163,7 +162,7 @@ tipsUI <- function(id) {
         box(
           title = "Choropleth map", status = "primary", height = "auto",
           solidHeader = TRUE, width = NULL,
-          leafletOutput(ns("choropleth_map"), height = 800)
+          leafletOutput(ns("choropleth_map"), height = 750)
         )
       )
     )
@@ -196,7 +195,7 @@ clusteringUI <- function(id) {
         box(
           title = "Clustering plot", status = "primary", height = "auto",
           solidHeader = TRUE, width = NULL,
-          plotOutput(outputId = ns("cluster_plot"), height = 800)
+          plotOutput(outputId = ns("cluster_plot"), height = 750)
         )
       )
     )
@@ -209,7 +208,7 @@ shinyUI(dashboardPage(
   dashboardSidebar(
     sidebarMenu(
       menuItem("Trips flow", tabName = "trips", icon = icon("taxi")),
-      menuItem("Tips", tabName = "tips", icon = icon("coins")),
+      menuItem("Economic stats", tabName = "stats", icon = icon("coins")),
       menuItem("Clustering",
         tabName = "clustering",
         icon = icon("project-diagram")
@@ -219,7 +218,7 @@ shinyUI(dashboardPage(
   dashboardBody(
     tabItems(
       flowUI("trips_flow"),
-      tipsUI("tips"),
+      statsUI("stats"),
       clusteringUI("clustering")
     )
   )

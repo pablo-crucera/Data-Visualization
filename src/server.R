@@ -137,14 +137,13 @@ flowServer <- function(id) {
         {
           # TODO: Check flow direction
           # TODO: Same origin and destination trips?
-          # TODO: Animated arcs or animated lines?
           trips <- trips[[paste(input$hour, input$day, sep = ".")]][, ]
           trips$width <- input$width * trips$busy_index
 
           # TODO: Add lines or arcs functionality: clear_animated_line?
           if (input$flow == "Arcs") {
             mapdeck_update(map_id = ns("map"), session = session) %>%
-              # clear_animated_arc(layer_id = "lines") %>% 
+              # clear_animated_arc(layer_id = "lines") %>%
               add_animated_arc(
                 data = trips,
                 origin = c("Orlng", "Orlat"),
@@ -158,7 +157,7 @@ flowServer <- function(id) {
               )
           # } else {
           #   mapdeck_update(map_id = ns("map"), session = session) %>%
-          #     clear_animated_arc(layer_id = "arcs") %>% 
+          #     clear_animated_arc(layer_id = "arcs") %>%
           #     add_animated_line(
           #       data = trips,
           #       origin = c("Orlng", "Orlat"),
@@ -196,7 +195,7 @@ flowServer <- function(id) {
 }
 
 
-tipsServer <- function(id) {
+statsServer <- function(id) {
   moduleServer(
     id,
     function(input, output, session) {
@@ -273,7 +272,7 @@ tipsServer <- function(id) {
           na.color = "#A9A9A9",
           bins = bins
         )
-        
+
         # Generate output map
         leafletProxy("choropleth_map") %>%
           clearShapes() %>%
@@ -372,6 +371,6 @@ clusteringServer <- function(id) {
 
 shinyServer(function(input, output, session) {
   flowServer("trips_flow")
-  tipsServer("tips")
+  statsServer("stats")
   clusteringServer("clustering")
 })
