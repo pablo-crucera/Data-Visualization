@@ -123,3 +123,45 @@ preprocessDispute <- function(taxis) {
   
   return(list(percOrig = percOrig, percDest = percDest))
 }
+
+
+# Returns all data the Shiny app needs
+getData <- function(pathfile) {
+  
+  if (file.exists("data.RData")) {
+    load("data.RData")
+  }
+  else {
+    
+    # Read taxi data
+    taxis <- read.csv(pathfile,header=TRUE)
+    
+    # Preprocess taxi data
+    tips <- preprocessTips(taxis=taxis)
+    dist <- preprocessDist(taxis=taxis)
+    disp <- preprocessDispute(taxis=taxis)
+    
+    # Read map
+    shapeData <- spTransform(readOGR("../data",'taxi_zones'), 
+                             CRS("+proj=longlat +datum=WGS84 +no_defs"))
+    
+    # Store values in DF
+    shapeData$"Tipsmnorig" <- tips$tipMnOrig$x
+    shapeData$"Tipsmndest" <- tips$tipMnDest$x
+    shapeData$"Tipsmdorig" <- tips$tipMdOrig$x
+    shapeData$"Tipsmddest" <- tips$tipMdDest$x
+    
+    shapeData$"Trip lengthmnorig" <- dist$distMnOrig$x
+    shapeData$"Trip lengthmndest" <- dist$distMnDest$x
+    shapeData$"Trip lengthmdorig" <- dist$distMdOrig$x
+    shapeData$"Trip lengthmddest" <- dist$distMdDest$x
+    
+    shapeData$"Disputesorig" <-disp$percOrig
+    shapeData$"Disputesdest" <-disp$percDest
+    
+    # Export file
+    save(shapeData, file = "data.RData")
+  }
+  
+  return(shapeData)
+}

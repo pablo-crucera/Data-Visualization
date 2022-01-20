@@ -49,24 +49,7 @@ ui <- dashboardPage(
 server <- function(input, output, session) {
   
   # Read data
-  data <- getData("../data/yellow_tripdata_2019-01.csv")
-  
-  taxis <- data$taxis
-  
-  tipMnOrig = data$tips$tipMnOrig
-  tipMnDest = data$tips$tipMnDest
-  tipMdOrig = data$tips$tipMdOrig
-  tipMdDest = data$tips$tipMdDest
-  
-  distMnOrig = data$dist$distMnOrig
-  distMnDest = data$dist$distMnDest
-  distMdOrig = data$dist$distMdOrig
-  distMdDest = data$dist$distMdDest
-  
-  percOrig = data$disp$percOrig
-  percDest = data$disp$percDest
-  
-  shapeData <- data$shapeData
+  shapeData <- getData("../data/yellow_tripdata_2019-01.csv")
   
   # Define reactive expressions
   readSelector <- reactive(input$select)
@@ -90,64 +73,55 @@ server <- function(input, output, session) {
     if (selector == "Tips") {
       buttonPUDO <- readButtonPUDO()
       buttonMNMD <- readButtonMNMD()
-      if (buttonPUDO == "orig" & buttonMNMD == "mn") {
-        shapeData$VAL <- tipMnOrig$x
+      if (buttonPUDO == "orig" & buttonMNMD == "mn") 
         lims <- c(0.5, 2, 3, 4.5, 7)    # Set intermediate bins for color map
-      } else if (buttonMNMD == "mn") {
-        shapeData$VAL <- tipMnDest$x
+      else if (buttonMNMD == "mn")
         lims <- c(1.5, 2.5, 4, 6, 7.5)
-      } else if (buttonPUDO == "orig") {
-        shapeData$VAL <- tipMdOrig$x
+      else if (buttonPUDO == "orig")
         lims <- c(0.10, 1, 2, 3, 5)
-      } else {
-        shapeData$VAL <- tipMdDest$x
+      else
         lims <- c(0.5, 2, 4, 5.5, 7.5)
-      }
       
       colorPalette = "YlGn"             # Color palette for map
       strPlot = "Tip statistic: "       # String for map info
-      units = " USD"                    # Units (for  map info)
+      units = " USD"                    # Units (for map info)
     } 
     
     else if (selector == "Trip length") {
+      
       buttonPUDO <- readButtonPUDO2()
       buttonMNMD <- readButtonMNMD2()
-      if (buttonPUDO == "orig" & buttonMNMD == "mn") 
-        shapeData$VAL <- distMnOrig$x
-      else if (buttonMNMD == "mn") shapeData$VAL <- distMnDest$x 
-      else if (buttonPUDO == "orig") shapeData$VAL <- distMdOrig$x
-      else shapeData$VAL <- distMdDest$x
       
       lims <- c(2, 4, 6, 8, 12)
-      
       colorPalette = "BuPu"
       strPlot = "Trip length statistic: "
       units = " miles"
+      
     }
     
     else {
+      
       buttonPUDO <- readButtonPUDO3()
-      if (buttonPUDO == "orig") {
-        shapeData$VAL <- percOrig
-      } else {
-        shapeData$VAL <- percDest
-      }
-      
+      buttonMNMD <- ""
+
       lims <- c(0.1, 0.2, 0.3, 0.4, 0.7, 1, 2, 5)
-      
       colorPalette = "YlOrRd"
       strPlot = "Dispute percentage: "
       units = " %"
+      
     }
     
+    identif <- paste0(selector, buttonMNMD, buttonPUDO)
     
     # Create bins for color map
-    bins <- c(round(quantile(shapeData$VAL, 0, na.rm = TRUE)-0.005,2),
+    bins <- c(round(quantile(shapeData@data[identif][,1], 0, na.rm = TRUE)
+                    -0.005,2),
               round(lims,2),
-              round(quantile(shapeData$VAL, 1, na.rm=TRUE)+0.005,2))
+              round(quantile(shapeData@data[identif][,1], 1, na.rm=TRUE)
+                    +0.005,2))
     
     # Create palette for color map
-    pal <- colorBin(colorPalette, domain = shapeData$VAL,
+    pal <- colorBin(colorPalette, domain = shapeData@data[identif][,1],
                     na.color = "#A9A9A9",
                     bins = bins)
     
@@ -155,44 +129,16 @@ server <- function(input, output, session) {
     leafletProxy("map") %>%
       clearShapes() %>%
       addPolygons(data=shapeData, weight = 2, opacity = 1, color = "white",
-                  fillColor = ~pal(shapeData$VAL), dashArray = "3", 
-                  fillOpacity = 0.5,
+                  fillColor = ~pal(shapeData@data[identif][,1]),
+                  dashArray = "3", fillOpacity = 0.5,
                   label=paste0("Zone: ", shapeData$zone, ", Borough: ",
                                shapeData$borough, ", ID: ",
                                shapeData$LocationID,", ", strPlot, 
-                               round(shapeData$VAL,2), units)) %>%
+                               round(shapeData@data[identif][,1],2), units)) %>%
       clearControls() %>%
-      addLegend(pal = pal, values = shapeData$VAL, opacity = 0.7, 
+      addLegend(pal = pal, values = shapeData@data[identif][,1], opacity = 0.7, 
                 title = NULL, position = "topleft")
   })
-}
-
-# Returns all data the Shiny app needs
-getData <- function(pathfile) {
-  
-  if (file.exists(here("choropleth/data.RData"))) {
-    load(here("choropleth/data.RData"))
-  }
-  else {
-    
-    # Read taxi data
-    taxis <- read.csv(pathfile,header=TRUE)
-    
-    # Preprocess taxi data
-    tips <- preprocessTips(taxis=taxis)
-    dist <- preprocessDist(taxis=taxis)
-    disp <- preprocessDispute(taxis=taxis)
-    
-    # Read map
-    shapeData <- spTransform(readOGR(here("data"),'taxi_zones'), 
-                             CRS("+proj=longlat +datum=WGS84 +no_defs"))
-    
-    # Export file
-    save(taxis, tips, dist, disp, shapeData,
-         file = here("choropleth/data.RData"))
-  }
-  
-  return(list(taxis=taxis, shapeData=shapeData, tips=tips, dist=dist, disp=disp))
 }
 
 shinyApp(ui, server)
