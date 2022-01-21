@@ -4,6 +4,10 @@ library(chorddiag)
 library(mapdeck)
 library(leaflet)
 library(shinyWidgets)
+library(shinyjs)
+library(googlePolylines)
+library(sp)
+library(spatialwidget)
 
 # TODO: Unify color palettes and justify their use
 

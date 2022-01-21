@@ -8,7 +8,15 @@ library(RColorBrewer)
 library(data.table)
 library(GGally)
 library(leaflet)
-
+library(cluster)
+library(caret)
+library(dplyr)
+library(purrr)
+library(rlang)
+library(shinyjs)
+library(googlePolylines)
+library(sp)
+library(spatialwidget)
 
 update_map <- function(pitch, bearing, ns, session) {
   # TODO: Update to current location with current zoom
@@ -303,7 +311,6 @@ clusteringServer <- function(id) {
     function(input, output, session) {
       load(here("data", "clustering.RData"))
 
-      # TODO: Don't recalculate clusters each time, save them
       kmeans.re <- reactive(kmeans(taxi, centers = input$clusters, nstart = 20))
 
       observeEvent(
@@ -326,7 +333,7 @@ clusteringServer <- function(id) {
               # Reshape the data
               center_reshape <- gather(
                 center_df, features, values,
-                VendorID:total_amount
+                time_pickup:boroughDst.Unknown
               )
               head(center_reshape)
 
@@ -356,8 +363,8 @@ clusteringServer <- function(id) {
               taxi <- as.data.table(taxi)
               taxi[, cluster := as.factor(kmeans.re$cluster)]
               col <- c(
-                "date_pickup", "time_pickup", "fare_amount", "total_amount",
-                "trip_distance", "tip_amount", "extra"
+                "total_amount", "trip_distance","tolls_amount",
+                "passenger_count"
               )
               ggpairs(taxi, aes(colour = cluster, alpha = 0.4), columns = col)
             })
