@@ -128,7 +128,7 @@ preprocessDispute <- function(taxis) {
 
 get.data <- function() {
   # Read taxi data
-  taxis <- read.csv(here("data", "yellow_tripdata_2019-01.csv"))
+  taxis <- read.csv(pathfile,header=TRUE)
   
   # Preprocess taxi data
   tips <- preprocessTips(taxis=taxis)
@@ -136,12 +136,25 @@ get.data <- function() {
   disp <- preprocessDispute(taxis=taxis)
   
   # Read map
-  shapeData <- spTransform(readOGR(here("data",'taxi_zones.shp')), 
+  shapeData <- spTransform(readOGR("../data",'taxi_zones'), 
                            CRS("+proj=longlat +datum=WGS84 +no_defs"))
   
+  # Store values in DF
+  shapeData$"Tipsmnorig" <- tips$tipMnOrig$x
+  shapeData$"Tipsmndest" <- tips$tipMnDest$x
+  shapeData$"Tipsmdorig" <- tips$tipMdOrig$x
+  shapeData$"Tipsmddest" <- tips$tipMdDest$x
+  
+  shapeData$"Trip lengthmnorig" <- dist$distMnOrig$x
+  shapeData$"Trip lengthmndest" <- dist$distMnDest$x
+  shapeData$"Trip lengthmdorig" <- dist$distMdOrig$x
+  shapeData$"Trip lengthmddest" <- dist$distMdDest$x
+  
+  shapeData$"Disputesorig" <-disp$percOrig
+  shapeData$"Disputesdest" <-disp$percDest
+  
   # Export file
-  save(tips, dist, disp, shapeData,
-       file = here("data", "choropleth.RData"))
+  save(shapeData, file = here("data", "choropleth.RData"))
 }
 
 get.data()
