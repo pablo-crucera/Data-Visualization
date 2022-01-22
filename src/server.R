@@ -224,13 +224,6 @@ statsServer <- function(id) {
       readButtonMNMD2 <- reactive(input$MN_MD2)
       readButtonPUDO3 <- reactive(input$PU_DO3)
       
-      # Create map
-      output$map <- renderLeaflet({
-        leaflet() %>%
-          addProviderTiles("CartoDB.Positron") %>%
-          setView(-73.983504, 40.697824, zoom = 11)
-      })
-      
       observe({
         selector <- readSelector()
         
@@ -291,7 +284,7 @@ statsServer <- function(id) {
                         bins = bins)
         
         # Generate output map
-        leafletProxy("map") %>%
+        leafletProxy("choropleth_map", session) %>%
           clearShapes() %>%
           addPolygons(data=shapeData, weight = 2, opacity = 1, color = "white",
                       fillColor = ~pal(shapeData@data[identif][,1]),
