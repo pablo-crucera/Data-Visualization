@@ -75,7 +75,8 @@ loaded via a namespace (and not attached):
 
 
 ## Usage
-
+- Run server.R or ui.R from src folder in RStudio
+- Web application can be found [here](https://1paumx-j0lia-s0nchez0mart0nez.shinyapps.io/NYCtaxi/)
 
 ## Authors
 - Pablo Crucera Barrero ([@pablo-crucera](https://github.com/pablo-crucera))
