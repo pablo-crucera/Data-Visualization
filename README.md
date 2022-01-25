@@ -15,10 +15,26 @@ The project has been developed using the following sotware:
   - [chorddiag](https://github.com/mattflor/chorddiag) (>= 0.1.3).
   - [rgdal](https://cran.r-project.org/web/packages/rgdal/index.html) (>= 1.5-28).
   - [mapdeck](https://github.com/SymbolixAU/mapdeck) (>= 0.3.4).
-  - gdata.
-  - here.
-  - igraph.
-  - dplyr.
+  - [gdata](https://rdrr.io/cran/gdata/) (>=2.18.0).
+  - [here](https://www.rdocumentation.org/packages/here/versions/1.0.1/topics/here) (>= 1.0.1).
+  - [igraph](https://igraph.org/r/) (>= 1.2.7).
+  - [dplyr](https://www.rdocumentation.org/packages/dplR/versions/1.7.2) (>= 1.7.2).
+  - [shinydashboard](https://rstudio.github.io/shinydashboard/get_started.html) (>= 0.7.2).
+  - [shinyWidgets](https://github.com/dreamRs/shinyWidgets) (>= 0.6.3).
+  - [shinyjs](https://www.rdocumentation.org/packages/shinyjs/versions/2.1.0) (>= 2.1.0).
+  - [googlePolylines](https://github.com/SymbolixAU/googlePolylines) (>= 0.8.2).
+  - [sp](https://cran.r-project.org/web/packages/sp/sp.pdf) (>= 1.4.6).
+  - [spatialwidget](https://rdrr.io/cran/spatialwidget/) (>=0.2.3).
+  - [factoextra](https://cran.r-project.org/web/packages/factoextra/readme/README.html) (>= 1.0.7).
+  - [tidyr](https://tidyr.tidyverse.org/) (>=1.0.4).
+  - [RColorBrewer](https://cran.r-project.org/web/packages/RColorBrewer/RColorBrewer.pdf) (>=1.1.2).
+  - [data.table](https://cran.r-project.org/web/packages/data.table/data.table.pdf) (>= 1.14.2).
+  - [GGally](https://www.rdocumentation.org/packages/GGally/versions/1.5.0) (>= 1.5.0).
+  - [cluster](https://www.r-bloggers.com/2021/04/cluster-analysis-in-r/) (>= 2.1.2).
+  - [caret](https://cran.r-project.org/web/packages/caret/caret.pdf) (>= 6.0.90).
+  - [purrr](https://purrr.tidyverse.org/) (>= 0.3.4).
+  - [rlang](https://www.rdocumentation.org/packages/rlang/versions/0.2.2) (>=0.2.2). 
+  
 
 <!--- sessionInfo output:
 ```
