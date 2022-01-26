@@ -5,7 +5,6 @@ library(gdata)
 library(geojsonio)
 library(dttr2)
 
-# TODO: Unify shapes loading with choropleth maps?
 
 # Returns a matrix that represents the taxi trip flow between boroughs
 get.boroughs.matrix <- function(df, zones) {
@@ -87,7 +86,7 @@ get.data <- function() {
   })
   names(trips) <- time_periods
 
-  save(mtrcs_boroughs, shapeData, trips, coord,
+  save(mtrcs_boroughs, shapeData, trips,
     file = here("data", "trips_flow.RData")
   )
 }
