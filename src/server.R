@@ -19,6 +19,7 @@ library(sp)
 library(spatialwidget)
 
 update_map <- function(pitch, bearing, ns, session) {
+  # TODO: Update to current location with current zoom
   mapdeck_update(map_id = ns("map"), session = session) %>% mapdeck_view(
     location = c(-73.983504, 40.697824),
     pitch = pitch,
@@ -47,12 +48,23 @@ flowServer <- function(id) {
       bearing <- 0
       rv_map <- reactiveValues(bearing = bearing, pitch = pitch, ns = ns)
 
+      # FIXME: Zones names in geojson. If not used, remove coord load
       output$map <- renderMapdeck(mapdeck(
         location = c(-73.983504, 40.697824),
         pitch = pitch,
         bearing = bearing
       ) %>%
         add_title(title = "NYC Taxi") %>%
+        # add_text(
+        #   data = coord,
+        #   lon = "V1",
+        #   lat = "V2",
+        #   fill_colour = "#000000",
+        #   text = "zone",
+        #   layer_id = "text",
+        #   size = 16,
+        #   brush_radius = 500
+        # ) %>%
         mapdeck_view(
           location = c(-73.983504, 40.697824),
           zoom = 10,
@@ -101,6 +113,7 @@ flowServer <- function(id) {
         }
       )
 
+      # TODO: Do shapes update with current zoom
       observeEvent(
         {
           input$styles
@@ -127,13 +140,18 @@ flowServer <- function(id) {
           input$day
           input$length
           input$speed
+          input$flow
         },
         {
+          # TODO: Check flow direction
+          # TODO: Same origin and destination trips?
           trips <- trips[[paste(input$hour, input$day, sep = ".")]][, ]
           trips$width <- input$width * trips$busy_index
 
+          # TODO: Add lines or arcs functionality: clear_animated_line?
           if (input$flow == "Arcs") {
             mapdeck_update(map_id = ns("map"), session = session) %>%
+              # clear_animated_arc(layer_id = "lines") %>%
               add_animated_arc(
                 data = trips,
                 origin = c("Orlng", "Orlat"),
@@ -145,6 +163,20 @@ flowServer <- function(id) {
                 layer_id = "arcs",
                 update_view = FALSE,
               )
+          # } else {
+          #   mapdeck_update(map_id = ns("map"), session = session) %>%
+          #     clear_animated_arc(layer_id = "arcs") %>%
+          #     add_animated_line(
+          #       data = trips,
+          #       origin = c("Orlng", "Orlat"),
+          #       destination = c("Dstlng", "Dstlat"),
+          #       stroke_width = "width",
+          #       trail_length = input$length * 0.001,
+          #       animation_speed = input$speed * 0.0004,
+          #       brush_radius = 500,
+          #       layer_id = "lines",
+          #       update_view = FALSE,
+          #     )
           }
         }
       )

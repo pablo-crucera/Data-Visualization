@@ -9,10 +9,13 @@ library(googlePolylines)
 library(sp)
 library(spatialwidget)
 
+# TODO: Unify color palettes and justify their use
+
 # Trips flow user interface
 flowUI <- function(id) {
   ns <- NS(id)
 
+  # TODO: What to do with Mapbox token?
   # Mapbox token
   key <- "pk.eyJ1IjoiamF2aWVnYWwiLCJhIjoiY2t5ZDU0NGo1MDEyMTMwcXBqOWxuaWQ1aSJ9.R8Jpo0pPpa8Ow46YQry_Wg"
   set_token(key)
@@ -29,6 +32,7 @@ flowUI <- function(id) {
   hours <- sprintf("%02d", 0:23)
   names(hours) <- sprintf("%02d:00-%02d:59", 0:23, 0:23)
 
+  # FIXME: Mapdeck map is not always shown
   tabItem(
     tabName = "trips",
     sidebarLayout(
@@ -93,6 +97,10 @@ flowUI <- function(id) {
                 column(2, sliderInput(ns("speed"),
                   label = "Speed:",
                   min = 0, max = 500, value = 50, ticks = FALSE
+                )),
+                column(2, radioButtons(
+                  ns("flow"), "Flow style",
+                  c("Arcs", "Lines")
                 ))
               )
             )
